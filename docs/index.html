@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Voice Memos — macOS App</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #141414;
+            --surface-2: #1e1e1e;
+            --border: #2a2a2a;
+            --text: #e8e8e8;
+            --text-muted: #888;
+            --accent: #5e9eff;
+            --accent-dim: #3a6ec920;
+            --green: #34d058;
+            --orange: #f0883e;
+            --radius: 12px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* Nav */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(10, 10, 10, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            z-index: 100;
+            padding: 12px 0;
+        }
+        nav .container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        nav .logo {
+            font-weight: 700;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        nav .logo img {
+            width: 24px;
+            height: 24px;
+            border-radius: 5px;
+        }
+        nav a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.2s;
+        }
+        nav a:hover { color: var(--text); }
+        nav .links { display: flex; gap: 24px; }
+
+        /* Hero */
+        .hero {
+            padding: 140px 0 80px;
+            text-align: center;
+        }
+        .hero .icon {
+            width: 128px;
+            height: 128px;
+            border-radius: 28px;
+            margin-bottom: 32px;
+            box-shadow: 0 8px 40px rgba(94, 158, 255, 0.15);
+        }
+        .hero h1 {
+            font-size: 48px;
+            font-weight: 800;
+            letter-spacing: -1.5px;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, var(--text) 0%, var(--accent) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            color: transparent;
+        }
+        .hero .tagline {
+            font-size: 20px;
+            color: var(--text-muted);
+            max-width: 520px;
+            margin: 0 auto 32px;
+        }
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 6px 16px;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+        .badge .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--green);
+        }
+
+        /* Sections */
+        section {
+            padding: 64px 0;
+        }
+        section h2 {
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            margin-bottom: 12px;
+        }
+        section .subtitle {
+            color: var(--text-muted);
+            font-size: 16px;
+            margin-bottom: 40px;
+        }
+
+        /* Features */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 16px;
+        }
+        .feature-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            transition: border-color 0.2s;
+        }
+        .feature-card:hover { border-color: var(--accent); }
+        .feature-card .icon-sm {
+            font-size: 28px;
+            margin-bottom: 12px;
+        }
+        .feature-card h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+        .feature-card p {
+            font-size: 14px;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        /* Diagram sections */
+        .diagram-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 32px;
+            margin-bottom: 24px;
+            overflow-x: auto;
+        }
+        .diagram-card h3 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 24px;
+        }
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Tech Stack */
+        .tech-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+        }
+        .tech-item {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .tech-item .label {
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .tech-item .desc {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* State Machine */
+        .state-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        .state-table th {
+            text-align: left;
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-muted);
+            font-weight: 500;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .state-table td {
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--border);
+        }
+        .state-table code {
+            background: var(--surface-2);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 13px;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            color: var(--accent);
+        }
+
+        /* Footer */
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 32px 0;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+        footer a { color: var(--accent); text-decoration: none; }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            .hero h1 { font-size: 32px; }
+            .hero .tagline { font-size: 17px; }
+            section h2 { font-size: 24px; }
+            .diagram-card { padding: 16px; }
+            nav .links { gap: 16px; }
+        }
+    </style>
+</head>
+<body>
+
+<nav>
+    <div class="container">
+        <div class="logo">
+            <img src="app-icon.png" alt="App Icon">
+            Image Voice Memos
+        </div>
+        <div class="links">
+            <a href="#features">Features</a>
+            <a href="#workflow">Workflow</a>
+            <a href="#architecture">Architecture</a>
+            <a href="#tech">Tech Stack</a>
+        </div>
+    </div>
+</nav>
+
+<header class="hero">
+    <div class="container">
+        <img src="app-icon.png" alt="Image Voice Memos Icon" class="icon">
+        <h1>Image Voice Memos</h1>
+        <p class="tagline">Voice memos and automatic transcription for your photos — right on your Mac.</p>
+        <span class="badge"><span class="dot"></span> Apple Silicon &middot; macOS 15+ &middot; SwiftUI &middot; On-Device AI</span>
+    </div>
+</header>
+
+<section id="features">
+    <div class="container">
+        <h2>Features</h2>
+        <p class="subtitle">Everything you need to document photos with your voice.</p>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="icon-sm">🎙️</div>
+                <h3>Instant Recording</h3>
+                <p>Audio hardware is pre-warmed — recording starts without delay after a 1-second countdown.</p>
+            </div>
+            <div class="feature-card">
+                <div class="icon-sm">📝</div>
+                <h3>Transcription</h3>
+                <p>Automatic speech-to-text using Apple's Speech Framework. Supports German and English.</p>
+            </div>
+            <div class="feature-card">
+                <div class="icon-sm">🌐</div>
+                <h3>Translation</h3>
+                <p>German transcriptions are optionally translated to English — completely local on-device.</p>
+            </div>
+            <div class="feature-card">
+                <div class="icon-sm">🖼️</div>
+                <h3>RAW Support</h3>
+                <p>Supports NEF, RAF, ORF, DNG and all common image formats. Fast thumbnails via CGImageSource.</p>
+            </div>
+            <div class="feature-card">
+                <div class="icon-sm">📁</div>
+                <h3>Folder-Based</h3>
+                <p>No import needed — just pick a folder. Meomos are stored as sidecar files alongside your photos.</p>
+            </div>
+            <div class="feature-card">
+                <div class="icon-sm">🔒</div>
+                <h3>Privacy First</h3>
+                <p>Runs exclusively on Apple Silicon. No cloud, no external APIs. Sandboxed with Hardened Runtime.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="workflow">
+    <div class="container">
+        <h2>Workflow</h2>
+        <p class="subtitle">The complete flow from folder selection to finished transcription.</p>
+
+        <div class="diagram-card">
+            <h3>User Workflow</h3>
+            <pre class="mermaid">
+flowchart TD
+    A["📁 Select Folder"] --> B["🖼️ Load Photo Grid"]
+    B --> C["👆 Select Photo"]
+    C --> D{"Voice memo\nexists?"}
+
+    D -- No --> E["🎙️ Start Recording"]
+    D -- Yes --> K["▶️ Playback / 🗑️ Delete"]
+
+    E --> F["⏱️ 1s Countdown\n+ Hardware Warmup"]
+    F --> G["🔴 Recording\n+ Waveform Display"]
+    G --> H["⏹️ Stop"]
+    H --> I["💾 PCM → AAC\nConversion"]
+    I --> J["📝 Transcription\n(Speech Framework)"]
+    J --> L{"Translation\nenabled?"}
+    L -- Yes --> M["🌐 DE → EN\nTranslation"]
+    L -- No --> N["✅ Done"]
+    M --> N
+    K --> C
+
+    style A fill:#1a3a5c,stroke:#5e9eff,color:#e8e8e8
+    style G fill:#5c1a1a,stroke:#ff5e5e,color:#e8e8e8
+    style N fill:#1a5c2a,stroke:#34d058,color:#e8e8e8
+            </pre>
+        </div>
+
+        <div class="diagram-card">
+            <h3>State Machine — VoiceMemoState</h3>
+            <pre class="mermaid">
+stateDiagram-v2
+    [*] --> noNote
+    noNote --> countingDown : Record
+    countingDown --> recording : Countdown = 0
+    recording --> converting : Stop
+    recording --> noNote : Cancel
+    converting --> noteExists : AAC saved
+    noteExists --> playing : Play
+    noteExists --> countingDown : Re-Record
+    noteExists --> noNote : Delete
+    playing --> paused : Pause
+    playing --> noteExists : Stop / End
+    paused --> playing : Resume
+    paused --> noteExists : Stop
+            </pre>
+        </div>
+    </div>
+</section>
+
+<section id="architecture">
+    <div class="container">
+        <h2>Architecture</h2>
+        <p class="subtitle">MVVM pattern with SwiftUI, @MainActor ViewModels, and specialized services.</p>
+
+        <div class="diagram-card">
+            <h3>System Overview</h3>
+            <pre class="mermaid">
+graph TB
+    subgraph Views["Views (SwiftUI)"]
+        CV[ContentView]
+        DV[DetailView]
+        PG[PhotoGridView]
+        VNC[VoiceMemoControlsView]
+        WF[WaveformView]
+        TB[ToolbarView]
+    end
+
+    subgraph ViewModels["ViewModels (@MainActor)"]
+        LVM[LibraryViewModel]
+        VNVM[VoiceMemoViewModel]
+    end
+
+    subgraph Services["Services"]
+        ILS[ImageLoadingService\n— Actor —]
+        ARS[AudioRecordingService]
+        APS[AudioPlaybackService]
+        TS[TranscriptionService]
+        TRS[TranslationService]
+        VSS[VoiceMemoStorageService]
+        FAS[FolderAccessService]
+    end
+
+    subgraph Storage["File System"]
+        IMG["Photos\n(JPEG, RAW, ...)"]
+        VN[".voicememos/\nphoto.m4a"]
+        TXT[".voicememos/\nphoto.txt"]
+        EN[".voicememos/\nphoto.en.txt"]
+    end
+
+    CV --> PG
+    CV --> DV
+    DV --> VNC
+    VNC --> WF
+    CV --> TB
+
+    PG --> LVM
+    TB --> LVM
+    DV --> VNVM
+    VNC --> VNVM
+
+    LVM --> ILS
+    LVM --> FAS
+    VNVM --> ARS
+    VNVM --> APS
+    VNVM --> TS
+    VNVM --> TRS
+    VNVM --> VSS
+
+    ILS --> IMG
+    VSS --> VN
+    TS --> TXT
+    TRS --> EN
+
+    style Views fill:#1a2a3a,stroke:#5e9eff,color:#e8e8e8
+    style ViewModels fill:#2a1a3a,stroke:#a05eff,color:#e8e8e8
+    style Services fill:#1a3a2a,stroke:#34d058,color:#e8e8e8
+    style Storage fill:#3a2a1a,stroke:#f0883e,color:#e8e8e8
+            </pre>
+        </div>
+
+        <div class="diagram-card">
+            <h3>Audio Pipeline</h3>
+            <pre class="mermaid">
+flowchart LR
+    MIC["🎤 Microphone"] --> PCM["PCM\n44.1kHz, 16-bit\nMono (.caf)"]
+    PCM --> AAC["AAC\n(.m4a)"]
+    AAC --> SF["Speech\nFramework"]
+    SF --> TXT["Transcript\n(.txt)"]
+    TXT --> TR["Translation\nFramework"]
+    TR --> EN["Translation\n(.en.txt)"]
+
+    AAC --> PLAY["▶️ AVAudioPlayer"]
+
+    style MIC fill:#5c1a1a,stroke:#ff5e5e,color:#e8e8e8
+    style AAC fill:#1a3a5c,stroke:#5e9eff,color:#e8e8e8
+    style TXT fill:#1a5c2a,stroke:#34d058,color:#e8e8e8
+    style EN fill:#3a2a1a,stroke:#f0883e,color:#e8e8e8
+            </pre>
+        </div>
+    </div>
+</section>
+
+<section id="tech">
+    <div class="container">
+        <h2>Tech Stack</h2>
+        <p class="subtitle">Native macOS technologies — zero external dependencies.</p>
+
+        <div class="tech-grid">
+            <div class="tech-item">
+                <div>
+                    <div class="label">SwiftUI</div>
+                    <div class="desc">Declarative UI Framework</div>
+                </div>
+            </div>
+            <div class="tech-item">
+                <div>
+                    <div class="label">AVFoundation</div>
+                    <div class="desc">Audio Recording & Playback</div>
+                </div>
+            </div>
+            <div class="tech-item">
+                <div>
+                    <div class="label">Speech Framework</div>
+                    <div class="desc">On-Device Transcription</div>
+                </div>
+            </div>
+            <div class="tech-item">
+                <div>
+                    <div class="label">Translation</div>
+                    <div class="desc">Local Translation DE→EN</div>
+                </div>
+            </div>
+            <div class="tech-item">
+                <div>
+                    <div class="label">CGImageSource</div>
+                    <div class="desc">RAW Thumbnail Extraction</div>
+                </div>
+            </div>
+            <div class="tech-item">
+                <div>
+                    <div class="label">App Sandbox</div>
+                    <div class="desc">Security-Scoped Bookmarks</div>
+                </div>
+            </div>
+            <div class="tech-item">
+                <div>
+                    <div class="label">XcodeGen</div>
+                    <div class="desc">Project Generation via YAML</div>
+                </div>
+            </div>
+            <div class="tech-item">
+                <div>
+                    <div class="label">Hardened Runtime</div>
+                    <div class="desc">Security Hardening</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="diagram-card" style="margin-top: 32px;">
+            <h3>File Structure — Sidecar Pattern</h3>
+            <table class="state-table">
+                <thead>
+                    <tr>
+                        <th>File</th>
+                        <th>Path</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Photo</td>
+                        <td><code>/Folder/photo.jpg</code></td>
+                        <td>Original image file</td>
+                    </tr>
+                    <tr>
+                        <td>Voice Memo</td>
+                        <td><code>/Folder/.voicememos/photo.m4a</code></td>
+                        <td>AAC audio (converted from PCM)</td>
+                    </tr>
+                    <tr>
+                        <td>Transcript</td>
+                        <td><code>/Folder/.voicememos/photo.txt</code></td>
+                        <td>Speech-to-text result</td>
+                    </tr>
+                    <tr>
+                        <td>Translation</td>
+                        <td><code>/Folder/.voicememos/photo.en.txt</code></td>
+                        <td>English translation</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<footer>
+    <div class="container">
+        <p>Image Voice Memos &middot; A native macOS app by Adrian Altner</p>
+        <p style="margin-top: 8px;">Built with SwiftUI &middot; Apple Silicon &middot; No Cloud &middot; 100% On-Device</p>
+    </div>
+</footer>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'dark',
+        themeVariables: {
+            darkMode: true,
+            background: '#141414',
+            primaryColor: '#1a3a5c',
+            primaryTextColor: '#e8e8e8',
+            primaryBorderColor: '#5e9eff',
+            lineColor: '#5e9eff',
+            secondaryColor: '#2a1a3a',
+            tertiaryColor: '#1a3a2a',
+            fontFamily: '-apple-system, BlinkMacSystemFont, SF Pro Text, sans-serif',
+            fontSize: '14px'
+        },
+        flowchart: { curve: 'basis', padding: 16 },
+        stateDiagram: { padding: 16 }
+    });
+</script>
+
+</body>
+</html>
