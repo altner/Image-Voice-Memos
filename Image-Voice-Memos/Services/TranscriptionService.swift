@@ -29,17 +29,31 @@ struct TranscriptionService {
             }
         }
 
+        // Determine audio duration for adaptive timeout
+        let audioDuration = await loadAudioDuration(url: audioURL)
+        print("🎙️ Audio duration: \(String(format: "%.1f", audioDuration))s")
+
         do {
             let request = SFSpeechURLRecognitionRequest(url: audioURL)
-            request.shouldReportPartialResults = false
+            request.shouldReportPartialResults = true
             request.requiresOnDeviceRecognition = true
 
-            let transcript = try await recognizeAudio(request, with: recognizer)
+            let timeoutSeconds = max(120.0, audioDuration * 3.0)
+            print("🎙️ Transcription timeout set to \(String(format: "%.0f", timeoutSeconds))s")
+
+            let transcript = try await recognizeAudio(request, with: recognizer, timeoutSeconds: timeoutSeconds)
             return transcript
         } catch {
             print("❌ Transcription error: \(error.localizedDescription)")
             return nil
         }
+    }
+
+    private func loadAudioDuration(url: URL) async -> TimeInterval {
+        let asset = AVURLAsset(url: url)
+        guard let duration = try? await asset.load(.duration) else { return 60.0 }
+        let seconds = duration.seconds
+        return seconds.isNaN || seconds <= 0 ? 60.0 : seconds
     }
 
     private func requestSpeechRecognitionAuthorization() async -> Bool {
@@ -50,7 +64,7 @@ struct TranscriptionService {
         }
     }
 
-    private func recognizeAudio(_ request: SFSpeechURLRecognitionRequest, with recognizer: SFSpeechRecognizer?) async throws -> String {
+    private func recognizeAudio(_ request: SFSpeechURLRecognitionRequest, with recognizer: SFSpeechRecognizer?, timeoutSeconds: TimeInterval) async throws -> String {
         return try await withCheckedThrowingContinuation { continuation in
             guard let recognizer = recognizer else {
                 continuation.resume(throwing: NSError(domain: "TranscriptionService", code: -1, userInfo: nil))
@@ -58,37 +72,54 @@ struct TranscriptionService {
             }
 
             var resumed = false
+            var bestTranscriptSoFar = ""
+            var timeoutWork: DispatchWorkItem?
 
             let task = recognizer.recognitionTask(with: request) { result, error in
                 if resumed { return }
 
-                if let error = error {
-                    print("❌ Recognition error: \(error.localizedDescription)")
-                    resumed = true
-                    continuation.resume(throwing: error)
-                    return
+                if let result = result {
+                    bestTranscriptSoFar = result.bestTranscription.formattedString
+
+                    if result.isFinal {
+                        let text = result.bestTranscription.formattedString
+                        print("✅ Transcription complete: \(text.prefix(50))...")
+                        resumed = true
+                        timeoutWork?.cancel()
+                        continuation.resume(returning: text)
+                    }
                 }
 
-                if let result = result, result.isFinal {
-                    let text = result.bestTranscription.formattedString
-                    print("✅ Transcription complete: \(text.prefix(50))...")
+                if let error = error, !resumed {
+                    print("❌ Recognition error: \(error.localizedDescription)")
                     resumed = true
-                    continuation.resume(returning: text)
+                    timeoutWork?.cancel()
+                    if !bestTranscriptSoFar.isEmpty {
+                        print("⚠️ Returning partial transcript (\(bestTranscriptSoFar.count) chars) after error")
+                        continuation.resume(returning: bestTranscriptSoFar)
+                    } else {
+                        continuation.resume(throwing: error)
+                    }
                 }
             }
 
-            // Timeout after 60 seconds to prevent hanging forever
-            let timeoutWork = DispatchWorkItem {
+            // Adaptive timeout to prevent hanging forever
+            timeoutWork = DispatchWorkItem {
                 guard !resumed else { return }
                 resumed = true
                 task.cancel()
-                continuation.resume(throwing: NSError(
-                    domain: "TranscriptionService",
-                    code: -2,
-                    userInfo: [NSLocalizedDescriptionKey: "Transcription timed out after 60 seconds"]
-                ))
+                if !bestTranscriptSoFar.isEmpty {
+                    print("⚠️ Transcription timed out after \(Int(timeoutSeconds))s — returning partial transcript (\(bestTranscriptSoFar.count) chars)")
+                    continuation.resume(returning: bestTranscriptSoFar)
+                } else {
+                    continuation.resume(throwing: NSError(
+                        domain: "TranscriptionService",
+                        code: -2,
+                        userInfo: [NSLocalizedDescriptionKey: "Transcription timed out after \(Int(timeoutSeconds)) seconds"]
+                    ))
+                }
             }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 60, execute: timeoutWork)
+            DispatchQueue.main.asyncAfter(deadline: .now() + timeoutSeconds, execute: timeoutWork!)
         }
     }
 

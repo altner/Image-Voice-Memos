@@ -244,19 +244,25 @@ final class VoiceMemoViewModel: ObservableObject {
         if success, let item = libraryViewModel?.selectedItem, let folderURL = libraryViewModel?.folderURL {
             voiceMemoState = .converting
             Task {
+                let pipelineStart = Date()
+
                 do {
                     try await recorder.convertToAAC()
                 } catch {
+                    print("❌ AAC conversion failed: \(error.localizedDescription)")
                     voiceMemoState = .noNote
                     return
                 }
 
                 let url = VoiceMemoStorageService.voiceMemoURL(for: item, in: folderURL)
+                let conversionTime = Date().timeIntervalSince(pipelineStart)
+                print("⏱️ AAC conversion took \(String(format: "%.1f", conversionTime))s")
 
                 // Pre-buffer audio for instant playback
                 try? player.prepare(url: url)
 
                 let dur = await VoiceMemoStorageService.duration(for: item, in: folderURL) ?? 0
+                print("⏱️ Audio duration: \(String(format: "%.1f", dur))s")
 
                 await MainActor.run {
                     self.voiceMemoState = .noteExists(duration: dur)
@@ -268,9 +274,12 @@ final class VoiceMemoViewModel: ObservableObject {
                     self.isTranscribing = true
                 }
 
+                let transcriptionStart = Date()
                 let locale = self.libraryViewModel?.transcriptionLanguage.locale ?? Locale(identifier: "de-DE")
                 if let transcript = await transcriptionService.transcribe(audioURL: url, locale: locale) {
-                    print("📝 Transcript received: \(transcript.prefix(100))...")
+                    let transcriptionTime = Date().timeIntervalSince(transcriptionStart)
+                    print("⏱️ Transcription took \(String(format: "%.1f", transcriptionTime))s")
+                    print("📝 Transcript received (\(transcript.count) chars): \(transcript.prefix(100))...")
                     do {
                         try transcriptionService.saveTranscription(transcript, for: url)
                         print("💾 Transcript saved successfully")
@@ -287,7 +296,8 @@ final class VoiceMemoViewModel: ObservableObject {
                         }
                     }
                 } else {
-                    print("❌ Transcription failed or returned nil")
+                    let transcriptionTime = Date().timeIntervalSince(transcriptionStart)
+                    print("❌ Transcription failed or returned nil after \(String(format: "%.1f", transcriptionTime))s")
                     await MainActor.run {
                         self.isTranscribing = false
                     }
@@ -300,7 +310,8 @@ final class VoiceMemoViewModel: ObservableObject {
 
     func triggerTranslationIfNeeded() {
         guard libraryViewModel?.translateToEnglish == true,
-              !transcription.isEmpty else { return }
+              !transcription.isEmpty,
+              libraryViewModel?.transcriptionLanguage != .english else { return }
         isTranslating = true
         translationConfiguration = translationService.makeConfiguration()
     }
