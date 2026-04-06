@@ -30,7 +30,7 @@ targets:
         NSSpeechRecognitionUsageDescription: "Image Voice Memos needs speech recognition access to automatically transcribe your voice memos."
         LSMinimumSystemVersion: "15.0"
         LSApplicationCategoryType: "public.app-category.photography"
-        CFBundleShortVersionString: "0.1.0"
+        CFBundleShortVersionString: "0.1.1"
         CFBundleVersion: "1"
         CFBundleName: "Image Voice Memos"
         NSPrincipalClass: NSApplication
