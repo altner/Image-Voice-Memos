@@ -390,81 +390,58 @@ stateDiagram-v2
         <div class="diagram-card">
             <h3>System Overview</h3>
             <pre class="mermaid">
-graph TB
-    subgraph Views["Views (SwiftUI)"]
-        CV[ContentView]
-        DV[DetailView]
-        PG[PhotoGridView]
-        VNC[VoiceMemoControlsView]
-        WF[WaveformView]
-        TB[ToolbarView]
+graph TD
+    subgraph V["Views"]
+        CV[ContentView] --> DV[DetailView]
+        CV --> PG[PhotoGridView]
     end
 
-    subgraph ViewModels["ViewModels (@MainActor)"]
+    subgraph VM["ViewModels"]
         LVM[LibraryViewModel]
         VNVM[VoiceMemoViewModel]
     end
 
-    subgraph Services["Services"]
-        ILS[ImageLoadingService\n— Actor —]
-        ARS[AudioRecordingService]
-        APS[AudioPlaybackService]
-        TS[TranscriptionService]
-        TRS[TranslationService]
-        VSS[VoiceMemoStorageService]
-        FAS[FolderAccessService]
+    subgraph S["Services"]
+        ARS[AudioRecording]
+        TS[Transcription]
+        TRS[Translation]
+        ILS[ImageLoading]
     end
 
-    subgraph Storage["File System"]
-        IMG["Photos\n(JPEG, RAW, ...)"]
-        VN[".voicememos/\nphoto.m4a"]
-        TXT[".voicememos/\nphoto.txt"]
-        EN[".voicememos/\nphoto.en.txt"]
+    subgraph FS["File System"]
+        M4A[".m4a"]
+        TXT[".txt"]
+        ENTXT[".en.txt"]
     end
-
-    CV --> PG
-    CV --> DV
-    DV --> VNC
-    VNC --> WF
-    CV --> TB
 
     PG --> LVM
-    TB --> LVM
     DV --> VNVM
-    VNC --> VNVM
-
     LVM --> ILS
-    LVM --> FAS
     VNVM --> ARS
-    VNVM --> APS
     VNVM --> TS
     VNVM --> TRS
-    VNVM --> VSS
-
-    ILS --> IMG
-    VSS --> VN
+    ARS --> M4A
     TS --> TXT
-    TRS --> EN
+    TRS --> ENTXT
 
-    style Views fill:#1a2a3a,stroke:#5e9eff,color:#e8e8e8
-    style ViewModels fill:#2a1a3a,stroke:#a05eff,color:#e8e8e8
-    style Services fill:#1a3a2a,stroke:#34d058,color:#e8e8e8
-    style Storage fill:#3a2a1a,stroke:#f0883e,color:#e8e8e8
+    style V fill:#1a2a3a,stroke:#5e9eff,color:#e8e8e8
+    style VM fill:#2a1a3a,stroke:#a05eff,color:#e8e8e8
+    style S fill:#1a3a2a,stroke:#34d058,color:#e8e8e8
+    style FS fill:#3a2a1a,stroke:#f0883e,color:#e8e8e8
             </pre>
         </div>
 
         <div class="diagram-card">
             <h3>Audio Pipeline</h3>
             <pre class="mermaid">
-flowchart LR
-    MIC["🎤 Microphone"] --> PCM["PCM\n44.1kHz, 16-bit\nMono (.caf)"]
-    PCM --> AAC["AAC\n(.m4a)"]
-    AAC --> SF["Speech\nFramework"]
-    SF --> TXT["Transcript\n(.txt)"]
-    TXT --> TR["Translation\nFramework"]
-    TR --> EN["Translation\n(.en.txt)"]
-
-    AAC --> PLAY["▶️ AVAudioPlayer"]
+flowchart TD
+    MIC["Microphone"] --> PCM["PCM 44.1kHz .caf"]
+    PCM --> AAC["AAC .m4a"]
+    AAC --> PLAY["Playback"]
+    AAC --> SF["Speech Framework"]
+    SF --> TXT["Transcript .txt"]
+    TXT --> TR["Translation Framework"]
+    TR --> EN["Translation .en.txt"]
 
     style MIC fill:#5c1a1a,stroke:#ff5e5e,color:#e8e8e8
     style AAC fill:#1a3a5c,stroke:#5e9eff,color:#e8e8e8
