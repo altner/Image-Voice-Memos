@@ -42,7 +42,7 @@ targets:
         com.apple.security.device.audio-input: true
     settings:
       base:
-        MARKETING_VERSION: "0.1.0"
+        MARKETING_VERSION: "0.1.1"
         CURRENT_PROJECT_VERSION: "1"
         PRODUCT_BUNDLE_IDENTIFIER: com.adrian-altner.imagevoicememos
         SWIFT_VERSION: "5.0"

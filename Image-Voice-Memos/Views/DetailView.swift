@@ -148,8 +148,20 @@ struct DetailView: View {
                             return
                         }
                         do {
-                            let response = try await session.translate(text)
-                            voiceMemoVM.handleTranslationResult(response.targetText)
+                            let response = try await withThrowingTaskGroup(of: String.self) { group in
+                                group.addTask {
+                                    let result = try await session.translate(text)
+                                    return result.targetText
+                                }
+                                group.addTask {
+                                    try await Task.sleep(nanoseconds: 30_000_000_000) // 30s timeout
+                                    throw CancellationError()
+                                }
+                                let first = try await group.next()!
+                                group.cancelAll()
+                                return first
+                            }
+                            voiceMemoVM.handleTranslationResult(response)
                         } catch {
                             print("❌ Translation error: \(error.localizedDescription)")
                             voiceMemoVM.handleTranslationError()
