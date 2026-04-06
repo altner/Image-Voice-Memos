@@ -2,10 +2,14 @@
 
 A native macOS application for browsing photos and recording voice memo — one voice memo per photo, automatically transcribed using Apple's on-device Speech Recognition.
 
-![Version](https://img.shields.io/badge/version-0.1.0-blue)
+![Version](https://img.shields.io/badge/version-0.1.1-blue)
 ![Platform](https://img.shields.io/badge/platform-macOS%2015.0%2B-blue)
 ![Swift](https://img.shields.io/badge/swift-5.0-orange)
 ![License](https://img.shields.io/badge/license-MIT-green)
+
+---
+
+![App Screenshot](app-screenshot.png)
 
 ---
 
