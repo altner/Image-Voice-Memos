@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - **Target**: macOS 15.0+ on Apple Silicon (M1 or later)
 - **Architecture**: arm64 only (no Intel/x86_64 support)
-- **Version**: 0.1.0
+- **Version**: 0.1.1
 - **Build System**: Xcode (generated via xcodegen)
 - **Bundle ID**: `com.adrian-altner.imagevoicememos`
 - **Image Formats Supported**: JPEG, PNG, TIFF, HEIC, HEIF, WebP, BMP, GIF, and RAW (NEF, RAF, ORF, DNG, CR2, CR3, ARW, RW2)
@@ -45,7 +45,8 @@ The app follows MVVM with `@MainActor` ViewModels and `@EnvironmentObject` injec
 - **Backend**: Apple's native `Speech` Framework (SFSpeechRecognizer)
 - **Language**: German (`de-DE`) and English (`en-US`) — selectable via `TranscriptionLanguage` enum in `LibraryViewModel`
 - **Processing**: Fully on-device via Apple Silicon Neural Engine (`requiresOnDeviceRecognition = true`), no cloud APIs
-- **Timeout**: 60-second timeout via `DispatchWorkItem` to prevent hanging
+- **Timeout**: Adaptive timeout (`max(120s, audioDuration × 3)`) via `DispatchWorkItem` to prevent hanging
+- **Partial Results**: Enabled as fallback — timeout returns best text so far instead of nothing
 - **Output**: Returns transcribed text as String; `saveTranscription()` writes .txt sidecar file
 - **Orphaned .txt**: `loadState()` loads transcription independently of `.m4a` existence — orphaned `.txt` files are shown even without a voice memo
 
@@ -60,6 +61,8 @@ The app follows MVVM with `@MainActor` ViewModels and `@EnvironmentObject` injec
 - **Processing**: Fully on-device, no external APIs
 - **Output**: Returns translated text as String; saved as `.en.txt` sidecar file
 - **Toggle**: User enables via "EN" checkbox in VoiceMemoControlsView when German is selected
+- **Guard**: Translation is skipped when transcription language is already English
+- **Timeout**: 30-second timeout via TaskGroup to prevent hanging
 
 #### FolderAccessService
 - **Security-Scoped Bookmarks**: Persists folder access in UserDefaults under key `"folderBookmark"`
@@ -182,6 +185,11 @@ Image-Voice-Memos/
 └── docs/
     └── index.html                   # Project description website (Mermaid.js diagrams)
 ```
+
+### Git Commits
+
+- **No Co-Authored-By**: Never add `Co-Authored-By` lines to commit messages
+- **No force push** without explicit user approval
 
 ### Common Pitfalls
 
